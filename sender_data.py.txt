@@ -1,0 +1,62 @@
+import socket
+import time
+
+import pygame
+def start_server():
+    server_ip = '192.168.1.114'
+    server_port = 12345
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((server_ip, server_port))
+    server.listen(5)
+
+
+
+    print(f"Server is listening on {server_ip}:{server_port}")
+
+
+    pygame.init()
+
+    # Initialize the joystick module
+    pygame.joystick.init()
+
+    # Get the number of connected joysticks
+    num_joysticks = pygame.joystick.get_count()
+
+    if num_joysticks > 0:
+        # Get the first joystick
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+
+        print(f"Joystick Name: {joystick.get_name()}")
+    else:
+        print("No joysticks found.")
+
+
+    while True:
+        client_socket, client_address = server.accept()
+        print(f"Accepted connection from {client_address}")
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            # Read the joystick input
+            data = []
+            for i in range(joystick.get_numaxes()):
+                axis_value = joystick.get_axis(i)
+                data.append(int(axis_value*1024))
+
+
+            # Send the joystick data over the socket
+            message = " ".join(map(str, data))
+            message += " "
+            client_socket.send(message.encode())
+
+            print(message)
+
+            time.sleep(0.25)
+
+if __name__ == '__main__':
+    start_server()
